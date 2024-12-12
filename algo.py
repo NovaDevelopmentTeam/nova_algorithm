@@ -1,6 +1,7 @@
 import hashlib
 import socket
 import json
+import argparse
 
 # Mining-Funktion: Berechnet einen Hash, der die Difficulty erfüllt
 def mine_share(header, share_difficulty):
@@ -45,7 +46,7 @@ def send_login(pool_socket, username):
     print(f"[Pool] Antwort auf Autorisierung: {response}")
 
 # Arbeitspakete verarbeiten und Shares zurücksenden
-def process_work(pool_socket):
+def process_work(pool_socket, difficulty):
     try:
         while True:
             work_request = pool_socket.recv(1024).decode()
@@ -55,7 +56,6 @@ def process_work(pool_socket):
                 print(f"[Arbeit] Neues Arbeitspaket erhalten: {work_data}")
                 params = work_data["params"]
                 header = params[0]  # Blockheader
-                difficulty = 24    # Beispiel-Schwierigkeitsgrad
 
                 # Mining ausführen
                 nonce, result_hash = mine_share(header, difficulty)
@@ -73,14 +73,17 @@ def process_work(pool_socket):
 
 # Hauptprogramm
 def main():
-    pool_address = "pool.minexmr.com"  # Beispiel-Pool (Monero)
-    pool_port = 4444
-    username = "dein_username"  # Ersetze mit deinem Mining-Benutzernamen
+    parser = argparse.ArgumentParser(description="Einfacher Miner mit Stratum-Unterstützung.")
+    parser.add_argument("--pool", type=str, default="pool.minexmr.com", help="Adresse des Mining-Pools")
+    parser.add_argument("--port", type=int, default=4444, help="Port des Mining-Pools")
+    parser.add_argument("--username", type=str, default="dein_username", help="Benutzername für den Mining-Pool")
+    parser.add_argument("--difficulty", type=int, default=24, help="Mining-Schwierigkeitsgrad")
+    args = parser.parse_args()
 
-    pool_socket = connect_to_pool(pool_address, pool_port)
+    pool_socket = connect_to_pool(args.pool, args.port)
     if pool_socket:
-        send_login(pool_socket, username)
-        process_work(pool_socket)
+        send_login(pool_socket, args.username)
+        process_work(pool_socket, args.difficulty)
     else:
         print("[Abbruch] Keine Verbindung zum Pool möglich.")
 
